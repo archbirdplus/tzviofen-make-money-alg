@@ -5,6 +5,17 @@ public enum VehicleType {
     case truck
     case crane
     case heli
+
+    func map<R>(truck t: R, crane c: R, heli h: R) -> R {
+        switch self {
+        case .truck:
+            return t
+        case .crane:
+            return c
+        case .heli:
+            return h
+        }
+    }
 }
 
 public struct Vehicle {
@@ -12,7 +23,7 @@ public struct Vehicle {
     public let time: Double
 
     public static func create(_ type: VehicleType) -> (Money, Vehicle) {
-        let cost = [VehicleType.truck: 200, .crane: 1200, .heli: 300][type]!
+        let cost = type.map(truck: 200, crane: 1200, heli: 300)
         return (cost, Vehicle(type))
     }
 
@@ -37,11 +48,24 @@ public enum BuildingType: Hashable {
     case silver
     case gold
 
-    var upgradeVehicle: VehicleType {
-        [BuildingType.glass: VehicleType.truck,
-         .bronze: .crane,
-         .silver: .heli,
-         .gold: .heli][self]!
+    func map<R>(glass g: R, bronze b: R, silver s: R, gold G: R) -> R {
+        switch self {
+        case .glass:
+            return g
+        case .bronze:
+            return b
+        case .silver:
+            return s
+        case .gold:
+            return G
+        }
+    }
+
+    public var upgradeVehicle: VehicleType {
+        self.map(glass: VehicleType.truck,
+            bronze: .crane,
+            silver: .heli,
+            gold: .heli)
     }
         
 }
@@ -52,10 +76,10 @@ public struct Building {
     public let moomoo: Int
 
     public var prof: Money {
-        return [BuildingType.glass: [20, 40, 60, 80, 100],
-                .bronze: [70, 150, 250, 380, 500],
-                .silver: [700, 1300, 1700, 3400, 4400],
-                .gold: [900, 1800, 3700, 400, 5000]][type]![level]
+        return type.map(glass: [20, 40, 60, 80, 100],
+                        bronze: [70, 150, 250, 380, 500],
+                        silver: [700, 1300, 1700, 3400, 4400],
+                        gold: [900, 1800, 3700, 400, 5000])[level]
     }
 
     private init(_ type: BuildingType, _ level: Int = 0, _ moomoo: Int = 1) {
@@ -65,20 +89,20 @@ public struct Building {
     }
 
     public static func create(_ type: BuildingType) -> (Money, Building) {
-        let cost = [BuildingType.glass: 2000,
-                    .bronze: 5000,
-                    .silver: 20_000,
-                    .gold: 40_000][type]!
+        let cost = type.map(glass: 2000,
+                            bronze: 5000,
+                            silver: 20_000,
+                            gold: 40_000)
         return (cost, Building(type))
     }
 
     public func upgrade() -> (VehicleType, Money, Building)? {
         guard level < 4 else { return nil }
         let vehicle = type.upgradeVehicle
-        let cost = [BuildingType.glass: [200, 400, 900, 1500],
-                    .bronze: [550, 1000, 1800, 300],
-                    .silver: [3_000, 10_000, 15_000, 25_000],
-                    .gold: [10_000, 20_000, 35_000, 60_000]][type]![level]
+        let cost = type.map(glass: [200, 400, 900, 1500],
+                            bronze: [550, 1000, 1800, 300],
+                            silver: [3_000, 10_000, 15_000, 25_000],
+                            gold: [10_000, 20_000, 35_000, 60_000])[level]
         return (vehicle, cost, Building(type, level+1, moomoo))
     }
 
@@ -128,9 +152,6 @@ public struct Game {
         guard i < buildings.count else { print("no building \(i)"); return nil }
         let b = buildings[i]
         guard let (type, cost, building) = b.upgrade() else { return nil }
-        //let vehicle = trade.0
-        //let cost = trade.1
-        //let building = trade.2
         guard vehicle?.type == type else { return nil }
         guard money >= cost else { return nil }
         var tmp = buildings
@@ -140,8 +161,7 @@ public struct Game {
 
     // time checks are hard, and delete the game before it can be known to check
     public func advanced() -> Game {
-        // vehicle event not important
-        let nextEvent = buildings.map { $0.nextEvent() }.min()!
+        let nextEvent = buildings.reduce(200) { r, x in min(r, x.nextEvent()) }
         var profits = 0
         let nbuildings: [Building] = buildings.map {
             let pair = $0.advanced(t: nextEvent) // building, money
@@ -154,6 +174,5 @@ public struct Game {
             time: time + nextEvent)
     }
 
-    
 }
 
