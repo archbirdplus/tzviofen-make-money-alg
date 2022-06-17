@@ -8,7 +8,7 @@ var minDepthCompleted: Int? = nil
 var start = Date()
 
 func solveBestMoves(game prev: Game, depth: Int = 0) -> ([[Input]], Game) {
-    guard prev.time <= 20833 else {
+    guard prev.time <= 20833 - 200 else {
         games += 1
         if games == 100000 {
             print("time to 100k games: \(Date().timeIntervalSince(start))")
